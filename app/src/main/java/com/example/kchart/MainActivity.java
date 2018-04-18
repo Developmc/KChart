@@ -5,6 +5,10 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
+import com.example.kchart.mychart.CrossMarkerView;
+import com.example.kchart.test.Model;
+import com.example.kchart.test.StockListBean;
 import com.github.mikephil.charting.charts.CandleStickChart;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -17,6 +21,8 @@ import com.github.mikephil.charting.data.CombinedData;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -27,6 +33,13 @@ public class MainActivity extends AppCompatActivity {
     private LineChart mLineChart;
     private CombinedChart mCombinedChart;
 
+    private int itemcount;
+    private List<CandleEntry> candleEntries = new ArrayList<>();
+    private ArrayList<String> xVals;
+    private LineData lineData;
+    private CandleData candleData;
+    private CombinedData combinedData;
+
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -35,7 +48,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView() {
         //显示组合图
-        initCombinedChart();
+        //initCombinedChart();
+        //有测试数据的组合图
+        loadTestChartData();
 
         //显示折线图
         //initLineChart();
@@ -111,8 +126,13 @@ public class MainActivity extends AppCompatActivity {
         CombinedData combinedData = new CombinedData();
         combinedData.setData(getLineDatas(40, 30));
         combinedData.setData(getCandleData(40));
-        mCombinedChart.setData(combinedData);
+        //设置绘制顺序，避免遮掩 (要在setData之前设置)
+        mCombinedChart.setDrawOrder(new CombinedChart.DrawOrder[] {
+            CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
+        });
+        mCombinedChart.setData(combinedData);  //设置数据源
         mCombinedChart.invalidate();
+        //mCombinedChart.animateX(2500);
     }
 
     private void initCandleChart() {
@@ -202,8 +222,19 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Entry> yVals1 = new ArrayList<Entry>();
 
         for (int i = 0; i < count; i++) {
-            float mult = range / 2f;
-            float val = getRandom(2) + 40;
+            //float mult = range / 2f;
+            //float val = getRandom(2) + 40;
+            float val = 0L;
+            int temp = getRandom(i + 1);
+            if (i < 10) {
+                val = 40 + temp;
+            } else if (i < 20) {
+                val = 40 + temp * 0.7F;
+            } else if (i < 30) {
+                val = 50 - temp;
+            } else {
+                val = 40 + temp * 0.2F;
+            }
             yVals1.add(new Entry(i, val));
         }
 
@@ -249,7 +280,150 @@ public class MainActivity extends AppCompatActivity {
         set.setHighlightEnabled(false);
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
         set.setDrawFilled(false);//有填充颜色
-        set.setCubicIntensity(10f);
+        set.setCubicIntensity(0.01f);
         return set;
+    }
+
+    //https://github.com/colin-phang/KLineChartDemo/blob/master/app/src/main/java/android/colin/democandlechart/MainActivity.java
+
+    /***** 从github上找到的测试数据 *****/
+
+    private void loadTestChartData() {
+        mCombinedChart = findViewById(R.id.combined_chart);
+        int color = ContextCompat.getColor(this, R.color.dark);
+
+        // scaling can now only be done on x- and y-axis separately
+        mCombinedChart.setPinchZoom(false);
+        mCombinedChart.setBackgroundColor(color);
+        mCombinedChart.setDrawGridBackground(false);
+        mCombinedChart.setAutoScaleMinMaxEnabled(true);
+        mCombinedChart.setDescription(null);//右下角对图表的描述信息
+
+        XAxis xAxis = mCombinedChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+
+        YAxis leftAxis = mCombinedChart.getAxisLeft();
+        leftAxis.setLabelCount(8, false);
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setDrawAxisLine(false);
+        //设置Y坐标的最大值和最小值，避免图表滚动时，Y坐标自适应范围
+        leftAxis.setAxisMaximum(25f);
+        leftAxis.setAxisMinimum(5f);
+        leftAxis.setEnabled(false);  //不显示左边的Y坐标
+
+        YAxis rightAxis = mCombinedChart.getAxisRight();
+        rightAxis.setLabelCount(8, false);
+        rightAxis.setDrawGridLines(false); //显示横线
+        rightAxis.setDrawAxisLine(true);  //绘制线
+        //设置Y坐标的最大值和最小值，避免图表滚动时，Y坐标自适应范围
+        rightAxis.setAxisMaximum(25f);
+        rightAxis.setAxisMinimum(5f);
+        rightAxis.setEnabled(true);  //显示右坐标
+        rightAxis.setTextColor(Color.WHITE);  //设置坐标字体颜色
+        rightAxis.setMinWidth(40);  //设置宽度，可能是要显示小数点后几位
+        rightAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);  //设置坐标上值显示的位置
+        //rightAxis.setStartAtZero(false);
+
+        // 设置比例图标示
+        mCombinedChart.getLegend().setEnabled(true);
+        mCombinedChart.resetTracking();
+        //设置绘制顺序，避免遮掩 (要在setData之前设置)
+        mCombinedChart.setDrawOrder(new CombinedChart.DrawOrder[] {
+            CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
+        });
+
+        //初始化数据
+        candleEntries = Model.getCandleEntries();
+        itemcount = candleEntries.size();
+        List<StockListBean.StockBean> stockBeans = Model.getData();
+        xVals = new ArrayList<>();
+        for (int i = 0; i < itemcount; i++) {
+            xVals.add(stockBeans.get(i).getDate());
+        }
+        combinedData = new CombinedData();
+
+        /*k line*/
+        candleData = generateCandleData();
+        combinedData.setData(candleData);
+        /*ma5*/
+        ArrayList<Entry> ma5Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemcount; index++) {
+            ma5Entries.add(new Entry(index, stockBeans.get(index).getMa5()));
+        }
+        /*ma10*/
+        ArrayList<Entry> ma10Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemcount; index++) {
+            ma10Entries.add(new Entry(index, stockBeans.get(index).getMa10()));
+        }
+        /*ma20*/
+        ArrayList<Entry> ma20Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemcount; index++) {
+            ma20Entries.add(new Entry(index, stockBeans.get(index).getMa20()));
+        }
+
+        lineData = new LineData(generateLineDataSet(ma5Entries, Color.BLUE, "ma5"),
+            generateLineDataSet(ma10Entries, Color.WHITE, "ma10"),
+            generateLineDataSet(ma20Entries, Color.YELLOW, "ma20"));
+
+        combinedData.setData(lineData);
+        mCombinedChart.setData(combinedData);//当前屏幕会显示所有的数据
+
+        //设置缩放（X坐标最多显示40个单位）
+        mCombinedChart.setVisibleXRangeMaximum(40);
+        //移动当前的X到最后
+        mCombinedChart.moveViewToX(itemcount);
+        mCombinedChart.invalidate();
+
+        //设置选中的监听器
+        mCombinedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override public void onValueSelected(Entry e, Highlight h) {
+                Toast.makeText(MainActivity.this, String.valueOf(h.getY()), Toast.LENGTH_SHORT)
+                    .show();
+            }
+
+            @Override public void onNothingSelected() {
+
+            }
+        });
+
+        //设置markerView
+        CrossMarkerView crossMarkerView = new CrossMarkerView(this);
+        crossMarkerView.setChartView(mCombinedChart);
+        mCombinedChart.setMarker(crossMarkerView);
+    }
+
+    private LineDataSet generateLineDataSet(List<Entry> entries, int color, String label) {
+        LineDataSet set = new LineDataSet(entries, label);
+        set.setColor(color);
+        set.setLineWidth(1f);
+        set.setCubicIntensity(0.5f);//圆滑曲线
+        set.setDrawCircles(false);
+        set.setDrawCircleHole(false);
+        set.setDrawValues(false);
+        set.setHighlightEnabled(false);
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+
+        return set;
+    }
+
+    private CandleData generateCandleData() {
+
+        CandleDataSet set = new CandleDataSet(candleEntries, "");
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setShadowWidth(0.7f);
+        set.setDecreasingColor(Color.RED);
+        set.setDecreasingPaintStyle(Paint.Style.FILL);
+        set.setIncreasingColor(Color.GREEN);
+        set.setIncreasingPaintStyle(Paint.Style.STROKE);
+        set.setNeutralColor(Color.RED);
+        set.setShadowColorSameAsCandle(true);
+        set.setHighlightLineWidth(0.5f);  //选中蜡烛时的高亮线的宽度
+        set.setHighLightColor(Color.WHITE);  //线的颜色
+
+        CandleData candleData = new CandleData();
+        candleData.addDataSet(set);
+
+        return candleData;
     }
 }
