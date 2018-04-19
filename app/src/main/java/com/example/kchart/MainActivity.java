@@ -5,8 +5,9 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
+import com.example.kchart.mychart.CoordinateMarkerView;
 import com.example.kchart.mychart.CrossMarkerView;
+import com.example.kchart.mychart.MyCombinedChart;
 import com.example.kchart.test.Model;
 import com.example.kchart.test.StockListBean;
 import com.github.mikephil.charting.charts.CandleStickChart;
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private CandleStickChart mCandleChart;
     private LineChart mLineChart;
-    private CombinedChart mCombinedChart;
+    private MyCombinedChart mCombinedChart;
 
     private int itemcount;
     private List<CandleEntry> candleEntries = new ArrayList<>();
@@ -306,23 +307,25 @@ public class MainActivity extends AppCompatActivity {
         YAxis leftAxis = mCombinedChart.getAxisLeft();
         leftAxis.setLabelCount(8, false);
         leftAxis.setDrawGridLines(false);
-        leftAxis.setDrawAxisLine(false);
+        leftAxis.setDrawAxisLine(true);  //绘制坐标轴线
         //设置Y坐标的最大值和最小值，避免图表滚动时，Y坐标自适应范围
         leftAxis.setAxisMaximum(25f);
         leftAxis.setAxisMinimum(5f);
         leftAxis.setEnabled(false);  //不显示左边的Y坐标
+        leftAxis.setMinWidth(50);  //设置宽度
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);  //在外部显示
 
         YAxis rightAxis = mCombinedChart.getAxisRight();
         rightAxis.setLabelCount(8, false);
         rightAxis.setDrawGridLines(false); //显示横线
-        rightAxis.setDrawAxisLine(true);  //绘制线
+        rightAxis.setDrawAxisLine(true);  //绘制坐标轴线
         //设置Y坐标的最大值和最小值，避免图表滚动时，Y坐标自适应范围
         rightAxis.setAxisMaximum(25f);
         rightAxis.setAxisMinimum(5f);
         rightAxis.setEnabled(true);  //显示右坐标
         rightAxis.setTextColor(Color.WHITE);  //设置坐标字体颜色
         rightAxis.setMinWidth(40);  //设置宽度，可能是要显示小数点后几位
-        rightAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);  //设置坐标上值显示的位置
+        rightAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);  //设置坐标上值显示的位置
         //rightAxis.setStartAtZero(false);
 
         // 设置比例图标示
@@ -378,8 +381,7 @@ public class MainActivity extends AppCompatActivity {
         //设置选中的监听器
         mCombinedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override public void onValueSelected(Entry e, Highlight h) {
-                Toast.makeText(MainActivity.this, String.valueOf(h.getY()), Toast.LENGTH_SHORT)
-                    .show();
+
             }
 
             @Override public void onNothingSelected() {
@@ -387,10 +389,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //设置markerView
-        CrossMarkerView crossMarkerView = new CrossMarkerView(this);
-        crossMarkerView.setChartView(mCombinedChart);
-        mCombinedChart.setMarker(crossMarkerView);
+        //设置Left坐标轴上的markerView
+        //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
+        mCombinedChart.setRightMarkerView(new CoordinateMarkerView(this));
+        mCombinedChart.setBottomMarkerView(new CoordinateMarkerView(this));
+        //设置交叉点的markerView
+        mCombinedChart.setCrossMarkerView(new CrossMarkerView(this));
     }
 
     private LineDataSet generateLineDataSet(List<Entry> entries, int color, String label) {
