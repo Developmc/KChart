@@ -18,9 +18,9 @@ import com.github.mikephil.charting.interfaces.datasets.IDataSet;
  */
 public class MyCombinedChart extends CombinedChart {
     //左侧Y轴marker
-    private CoordinateMarkerView mLeftMarkerView;
-    private CoordinateMarkerView mRightMarkerView;
-    private CoordinateMarkerView mBottomMarkerView;
+    private YMarkerView mLeftMarkerView;
+    private YMarkerView mRightMarkerView;
+    private XMarkerView mBottomMarkerView;
     //交叉点的marker
     private CrossMarkerView mCrossMarkerView;
 
@@ -32,15 +32,15 @@ public class MyCombinedChart extends CombinedChart {
         super(context, attrs);
     }
 
-    public void setLeftMarkerView(CoordinateMarkerView leftMarkerView) {
+    public void setLeftMarkerView(YMarkerView leftMarkerView) {
         this.mLeftMarkerView = leftMarkerView;
     }
 
-    public void setRightMarkerView(CoordinateMarkerView rightMarkerView) {
+    public void setRightMarkerView(YMarkerView rightMarkerView) {
         this.mRightMarkerView = rightMarkerView;
     }
 
-    public void setBottomMarkerView(CoordinateMarkerView bottomMarkerView) {
+    public void setBottomMarkerView(XMarkerView bottomMarkerView) {
         this.mBottomMarkerView = bottomMarkerView;
     }
 
@@ -74,7 +74,7 @@ public class MyCombinedChart extends CombinedChart {
 
             if (mLeftMarkerView != null) {
                 // callbacks to update the content
-                mLeftMarkerView.refreshContent(e.getY(), e, highlight);
+                mLeftMarkerView.refreshContent(e, highlight);
                 // draw the marker:pos[0]对应的坐标是X,pos[1]对应的坐标是Y
                 mLeftMarkerView.draw(canvas,
                     mViewPortHandler.contentLeft() - mLeftMarkerView.getWidth(),
@@ -82,13 +82,13 @@ public class MyCombinedChart extends CombinedChart {
             }
 
             if (mRightMarkerView != null) {
-                mRightMarkerView.refreshContent(e.getY(), e, highlight);
+                mRightMarkerView.refreshContent(e, highlight);
                 mRightMarkerView.draw(canvas, mViewPortHandler.contentRight(),
                     pos[1] - mRightMarkerView.getHeight() / 2);
             }
 
             if (mBottomMarkerView != null) {
-                mBottomMarkerView.refreshContent(e.getX(), e, highlight);
+                mBottomMarkerView.refreshContent(e, highlight);
                 mBottomMarkerView.draw(canvas, pos[0] - mBottomMarkerView.getWidth() / 2,
                     mViewPortHandler.contentBottom());
             }

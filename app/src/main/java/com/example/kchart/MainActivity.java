@@ -5,14 +5,16 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import com.example.kchart.mychart.CoordinateMarkerView;
 import com.example.kchart.mychart.CrossMarkerView;
 import com.example.kchart.mychart.MyCombinedChart;
+import com.example.kchart.mychart.XMarkerView;
+import com.example.kchart.mychart.YMarkerView;
 import com.example.kchart.test.Model;
 import com.example.kchart.test.StockListBean;
 import com.github.mikephil.charting.charts.CandleStickChart;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.CandleData;
@@ -22,6 +24,7 @@ import com.github.mikephil.charting.data.CombinedData;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import java.util.ArrayList;
@@ -303,6 +306,14 @@ public class MainActivity extends AppCompatActivity {
         XAxis xAxis = mCombinedChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
+        //将X坐标转换显示
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override public String getFormattedValue(float value, AxisBase axis) {
+                int index = (int) value;
+                //这里时间注意要乘以1000
+                return xVals.get(index);
+            }
+        });
 
         YAxis leftAxis = mCombinedChart.getAxisLeft();
         leftAxis.setLabelCount(8, false);
@@ -391,8 +402,8 @@ public class MainActivity extends AppCompatActivity {
 
         //设置Left坐标轴上的markerView
         //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
-        mCombinedChart.setRightMarkerView(new CoordinateMarkerView(this));
-        mCombinedChart.setBottomMarkerView(new CoordinateMarkerView(this));
+        mCombinedChart.setRightMarkerView(new YMarkerView(this));
+        mCombinedChart.setBottomMarkerView(new XMarkerView(this, xVals));
         //设置交叉点的markerView
         mCombinedChart.setCrossMarkerView(new CrossMarkerView(this));
     }
