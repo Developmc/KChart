@@ -64,7 +64,7 @@ public class StockListBean {
         private float High;
         private float Low;
         private float Close;
-        private String Volume;
+        private float Volume;
         private float Adj;
         private float ma5;
         private float ma10;
@@ -110,11 +110,11 @@ public class StockListBean {
             Close = close;
         }
 
-        public String getVolume() {
+        public float getVolume() {
             return Volume;
         }
 
-        public void setVolume(String volume) {
+        public void setVolume(float volume) {
             Volume = volume;
         }
 
