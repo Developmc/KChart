@@ -9,9 +9,11 @@ import com.example.kchart.mychart.CoupleChartGestureListener;
 import com.example.kchart.mychart.CrossMarkerView;
 import com.example.kchart.mychart.MyCombinedChart;
 import com.example.kchart.mychart.XMarkerView;
+import com.example.kchart.mychart.YLastMarkerView;
 import com.example.kchart.mychart.YMarkerView;
 import com.example.kchart.test.Model;
 import com.example.kchart.test.StockListBean;
+import com.example.kchart.util.TimeUtil;
 import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.AxisBase;
@@ -40,11 +42,10 @@ public class MainActivity extends AppCompatActivity {
     private MyCombinedChart mKLineChart;
     private MyCombinedChart mVolumeChart;
 
-    private int itemcount;
-    private List<CandleEntry> candleEntries = new ArrayList<>();
     private ArrayList<String> xVals;
-    private LineData lineData;
-    private CandleData candleData;
+
+    private CombinedData kLineData;
+    private CombinedData volumeData;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,32 +55,137 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView() {
         //有测试数据的组合图
-        loadTestChartData();
+        loadChart();
     }
 
     //https://github.com/colin-phang/KLineChartDemo/blob/master/app/src/main/java/android/colin/democandlechart/MainActivity.java
 
     /***** 从github上找到的测试数据 *****/
 
-    private void loadTestChartData() {
+    private void loadChart() {
+        //初始化数据
+        initData();
+        initKLineChart();
+        initVolumeChart();
+
+        mKLineChart.setData(kLineData);
+        //设置缩放（X坐标最多显示40个单位）,需要在设置数据后调用才有效
+        mKLineChart.setVisibleXRangeMaximum(40);
+        mKLineChart.post(new Runnable() {
+            @Override public void run() {
+                //控制缩放范围
+                mKLineChart.setVisibleXRangeMinimum(10);
+                mKLineChart.setVisibleXRangeMaximum(1000);
+            }
+        });
+        //移动当前的X到最后
+        mKLineChart.moveViewToX(xVals.size());
+        mKLineChart.invalidate();
+
+        /****************************/
+        mVolumeChart.setData(volumeData);
+        //设置缩放（X坐标最多显示40个单位）,需要在设置数据后调用才有效
+        mVolumeChart.setVisibleXRangeMaximum(40);
+        mVolumeChart.post(new Runnable() {
+            @Override public void run() {
+                //控制缩放范围
+                mVolumeChart.setVisibleXRangeMinimum(10);
+                mVolumeChart.setVisibleXRangeMaximum(1000);
+            }
+        });
+        //移动当前的X到最后
+        mVolumeChart.moveViewToX(xVals.size());
+        mVolumeChart.invalidate();
+
+        //设置两表对齐
+        setOffset();
+        //绑定手势事件
+        setChartListener();
+    }
+
+    private void initData() {
+        //初始化数据
+        List<CandleEntry> candleEntries = Model.getCandleEntries();
+        int itemCount = candleEntries.size();
+        List<StockListBean.StockBean> stockBeans = Model.getData();
+        xVals = new ArrayList<>();
+        for (int i = 0; i < itemCount; i++) {
+            xVals.add(stockBeans.get(i).getDate());
+        }
+
+        kLineData = new CombinedData();
+        /*k line*/
+        CandleData candleData = generateCandleData(candleEntries);
+        kLineData.setData(candleData);
+
+        /*ma5*/
+        ArrayList<Entry> ma5Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemCount; index++) {
+            ma5Entries.add(new Entry(index, stockBeans.get(index).getMa5()));
+        }
+        /*ma10*/
+        ArrayList<Entry> ma10Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemCount; index++) {
+            ma10Entries.add(new Entry(index, stockBeans.get(index).getMa10()));
+        }
+        /*ma20*/
+        ArrayList<Entry> ma20Entries = new ArrayList<Entry>();
+        for (int index = 0; index < itemCount; index++) {
+            ma20Entries.add(new Entry(index, stockBeans.get(index).getMa20()));
+        }
+
+        LineData lineData = new LineData(generateLineDataSet(ma5Entries, Color.BLUE, "ma5"),
+            generateLineDataSet(ma10Entries, Color.WHITE, "ma10"),
+            generateLineDataSet(ma20Entries, Color.YELLOW, "ma20"));
+        kLineData.setData(lineData);
+
+        //成交量图
+        volumeData = new CombinedData();
+        volumeData.setData(generateBarData());
+        /*成交量曲线*/
+        ArrayList<Entry> tempEntries = new ArrayList<Entry>();
+        for (int index = 0; index < itemCount; index++) {
+            tempEntries.add(new Entry(index, 30000000F));
+        }
+        LineData volumeLineData =
+            new LineData(generateLineDataSet(tempEntries, Color.BLUE, "Temp"));
+        volumeData.setData(volumeLineData);
+    }
+
+    private void initKLineChart() {
         mKLineChart = findViewById(R.id.k_line_chart);
-        int color = ContextCompat.getColor(this, R.color.dark);
+        int chartBgColor = ContextCompat.getColor(this, R.color.chart_bg_color);
+        int coordinateBgColor = ContextCompat.getColor(this, R.color.coordinate_bg_color);
+        int coordinateTextColor = ContextCompat.getColor(this, R.color.coordinate_text_color);
 
         // scaling can now only be done on x- and y-axis separately
-        mKLineChart.setPinchZoom(false);
-        mKLineChart.setBackgroundColor(color);
+        mKLineChart.setPinchZoom(true);
+        mKLineChart.setScaleXEnabled(true);   //允许X轴缩放
+        mKLineChart.setScaleYEnabled(false);   //不允许Y轴缩放
+        mKLineChart.setBackgroundColor(chartBgColor);
         mKLineChart.setDrawGridBackground(false);
         mKLineChart.setAutoScaleMinMaxEnabled(true);
         mKLineChart.setDescription(null);//右下角对图表的描述信息
+        mKLineChart.setMinOffset(0f);//移除内边距
+        mKLineChart.setExtraBottomOffset(5f); //添加Bottom X坐标的内边距，避免显示不全
 
         XAxis xAxis = mKLineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(false);
+        xAxis.setTextSize(8);//设置字体大小
+        xAxis.setLabelCount(10, false);
+        xAxis.setDrawGridLines(true);  //显示X轴网格
+        xAxis.setDrawAxisLine(true);  //绘制坐标轴线
+        xAxis.setGridColor(coordinateBgColor);//设置网格线的颜色
+        xAxis.setGridLineWidth(0.5f);//设置网格线的宽度
+        xAxis.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        xAxis.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        xAxis.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         //将X坐标转换显示
         xAxis.setValueFormatter(new IAxisValueFormatter() {
             @Override public String getFormattedValue(float value, AxisBase axis) {
                 int index = (int) value;
-                return xVals.get(index);
+                long time = TimeUtil.string2Long(xVals.get(index), "yyyy/MM/dd");
+                return TimeUtil.long2String(time, TimeUtil.CHART_FORMAT);
             }
         });
 
@@ -87,32 +193,66 @@ public class MainActivity extends AppCompatActivity {
         leftAxis.setEnabled(false);
 
         YAxis rightAxis = mKLineChart.getAxisRight();
-        rightAxis.setLabelCount(8, false);
-        rightAxis.setDrawGridLines(false); //显示横线
+        rightAxis.setTextSize(8);//设置字体大小
+        rightAxis.setLabelCount(5, false);
+        rightAxis.setDrawGridLines(true); ////显示Y轴网格
         rightAxis.setDrawAxisLine(true);  //绘制坐标轴线
+        rightAxis.setGridColor(coordinateBgColor);//设置网格线的颜色
+        rightAxis.setGridLineWidth(0.5f);//设置网格线的宽度
+        rightAxis.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        rightAxis.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        rightAxis.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         //设置Y坐标的最大值和最小值，避免图表滚动时，Y坐标自适应范围
-        rightAxis.setAxisMaximum(25f);
-        rightAxis.setAxisMinimum(5f);
+        //rightAxis.setAxisMaximum(25f);
+        //rightAxis.setAxisMinimum(5f);
         rightAxis.setEnabled(true);  //显示右坐标
-        rightAxis.setTextColor(Color.WHITE);  //设置坐标字体颜色
         rightAxis.setMinWidth(40);  //设置宽度，可能是要显示小数点后几位
         rightAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);  //设置坐标上值显示的位置
         //rightAxis.setStartAtZero(false);
 
-        /*****************************************************/
+        // 设置图标示
+        mKLineChart.getLegend().setEnabled(false);
+        mKLineChart.resetTracking();
+        //设置绘制顺序，避免遮掩 (要在setData之前设置)
+        mKLineChart.setDrawOrder(new CombinedChart.DrawOrder[] {
+            CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
+        });
+
+        //设置Left坐标轴上的markerView
+        //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
+        mKLineChart.setRightMarkerView(new YMarkerView(this));
+        mKLineChart.setLastMarkerView(new YLastMarkerView(this));
+        mKLineChart.setBottomMarkerView(new XMarkerView(this, xVals));
+        //设置交叉点的markerView
+        mKLineChart.setCrossMarkerView(new CrossMarkerView(this));
+    }
+
+    private void initVolumeChart() {
+        int chartBgColor = ContextCompat.getColor(this, R.color.chart_bg_color);
+        int coordinateBgColor = ContextCompat.getColor(this, R.color.coordinate_bg_color);
+        int coordinateTextColor = ContextCompat.getColor(this, R.color.coordinate_text_color);
+
         mVolumeChart = findViewById(R.id.volume_chart);
-        mVolumeChart.setBackgroundColor(color);
+        mVolumeChart.setBackgroundColor(chartBgColor);
         mVolumeChart.setDrawValueAboveBar(true);
         mVolumeChart.getDescription().setEnabled(false);
         mVolumeChart.setDragEnabled(true);
-        mVolumeChart.setScaleYEnabled(false);
+        mVolumeChart.setScaleXEnabled(true);   //允许X轴缩放
+        mVolumeChart.setScaleYEnabled(false);   //不允许Y轴缩放
         mVolumeChart.setAutoScaleMinMaxEnabled(true);
+        mVolumeChart.setMinOffset(0f); //移除内边距
+        mVolumeChart.setExtraBottomOffset(5f);//添加Bottom X坐标的内边距，避免显示不全
 
         Legend barChartLegend = mVolumeChart.getLegend();
         barChartLegend.setEnabled(false);
         //bar x y轴
         XAxis xAxisBar = mVolumeChart.getXAxis();
         xAxisBar.setDrawGridLines(false);
+        xAxisBar.setEnabled(false);//不显示坐标轴：和KLine图表共用一个X坐标轴
+        xAxisBar.setDrawAxisLine(true);//绘制坐标轴
+        xAxisBar.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        xAxisBar.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        xAxisBar.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         xAxisBar.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxisBar.setValueFormatter(new IAxisValueFormatter() {
             @Override public String getFormattedValue(float value, AxisBase axis) {
@@ -125,104 +265,31 @@ public class MainActivity extends AppCompatActivity {
         axisLeftBar.setEnabled(false);
 
         YAxis axisRightBar = mVolumeChart.getAxisRight();
-        axisRightBar.setLabelCount(4, false);
-        axisRightBar.setDrawGridLines(false); //显示横线
+        axisRightBar.setTextSize(8);//设置字体大小
+        axisRightBar.setLabelCount(2, false);
+        axisRightBar.setDrawGridLines(true); //显示横线
+        axisRightBar.setGridColor(coordinateBgColor);//设置网格线的颜色
+        axisRightBar.setGridLineWidth(0.5f);//设置网格线的宽度
         axisRightBar.setDrawAxisLine(true);  //绘制坐标轴线
         axisRightBar.setEnabled(true);  //显示右坐标
-        axisRightBar.setTextColor(Color.WHITE);  //设置坐标字体颜色
+        axisRightBar.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        axisRightBar.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        axisRightBar.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         axisRightBar.setMinWidth(40);  //设置宽度，可能是要显示小数点后几位
         axisRightBar.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);  //设置坐标上值显示的位置
-
-        /*****************************************************/
-
-        // 设置比例图标示
-        mKLineChart.getLegend().setEnabled(true);
-        mKLineChart.resetTracking();
-        //设置绘制顺序，避免遮掩 (要在setData之前设置)
-        mKLineChart.setDrawOrder(new CombinedChart.DrawOrder[] {
-            CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
-        });
-
-        //初始化数据
-        candleEntries = Model.getCandleEntries();
-        itemcount = candleEntries.size();
-        List<StockListBean.StockBean> stockBeans = Model.getData();
-        xVals = new ArrayList<>();
-        for (int i = 0; i < itemcount; i++) {
-            xVals.add(stockBeans.get(i).getDate());
-        }
-
-        CombinedData kLineData = new CombinedData();
-        /*k line*/
-        candleData = generateCandleData();
-        kLineData.setData(candleData);
-        /*ma5*/
-        ArrayList<Entry> ma5Entries = new ArrayList<Entry>();
-        for (int index = 0; index < itemcount; index++) {
-            ma5Entries.add(new Entry(index, stockBeans.get(index).getMa5()));
-        }
-        /*ma10*/
-        ArrayList<Entry> ma10Entries = new ArrayList<Entry>();
-        for (int index = 0; index < itemcount; index++) {
-            ma10Entries.add(new Entry(index, stockBeans.get(index).getMa10()));
-        }
-        /*ma20*/
-        ArrayList<Entry> ma20Entries = new ArrayList<Entry>();
-        for (int index = 0; index < itemcount; index++) {
-            ma20Entries.add(new Entry(index, stockBeans.get(index).getMa20()));
-        }
-
-        lineData = new LineData(generateLineDataSet(ma5Entries, Color.BLUE, "ma5"),
-            generateLineDataSet(ma10Entries, Color.WHITE, "ma10"),
-            generateLineDataSet(ma20Entries, Color.YELLOW, "ma20"));
-
-        /****************************/
-        CombinedData volumeData = new CombinedData();
-        volumeData.setData(generateBarData());
-
-        /*成交量曲线*/
-        ArrayList<Entry> tempEntries = new ArrayList<Entry>();
-        for (int index = 0; index < itemcount; index++) {
-            tempEntries.add(new Entry(index, 40000000F));
-        }
-        LineData volumeLineData =
-            new LineData(generateLineDataSet(tempEntries, Color.BLUE, "Temp"));
-        volumeData.setData(volumeLineData);
-
-        mVolumeChart.setData(volumeData);
-        //设置缩放（X坐标最多显示40个单位）
-        mVolumeChart.setVisibleXRangeMaximum(40);
-        //移动当前的X到最后
-        mVolumeChart.moveViewToX(itemcount);
-        mVolumeChart.invalidate();
-        /****************************/
-
-        kLineData.setData(lineData);
-        mKLineChart.setData(kLineData);//当前屏幕会显示所有的数据
-        //设置缩放（X坐标最多显示40个单位）
-        mKLineChart.setVisibleXRangeMaximum(40);
-        //移动当前的X到最后
-        mKLineChart.moveViewToX(itemcount);
-        mKLineChart.invalidate();
+        axisRightBar.setAxisMinimum(0.0f);//设置Y轴显示最小值，不然0下面会有空隙
 
         //设置Left坐标轴上的markerView
         //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
-        mKLineChart.setRightMarkerView(new YMarkerView(this));
-        mKLineChart.setBottomMarkerView(new XMarkerView(this, xVals));
-        //设置交叉点的markerView
-        mKLineChart.setCrossMarkerView(new CrossMarkerView(this));
-
-        //设置两表对齐
-        setOffset();
-        //绑定手势事件
-        setChartListener();
-
+        mVolumeChart.setRightMarkerView(new YMarkerView(this));
+        mVolumeChart.setLastMarkerView(new YLastMarkerView(this));
+        mVolumeChart.setBottomMarkerView(new XMarkerView(this, xVals));
     }
 
     private LineDataSet generateLineDataSet(List<Entry> entries, int color, String label) {
         LineDataSet set = new LineDataSet(entries, label);
         set.setColor(color);
-        set.setLineWidth(1f);
+        set.setLineWidth(0.5f); //线条宽度
         set.setCubicIntensity(0.5f);//圆滑曲线
         set.setDrawCircles(false);
         set.setDrawCircleHole(false);
@@ -233,19 +300,22 @@ public class MainActivity extends AppCompatActivity {
         return set;
     }
 
-    private CandleData generateCandleData() {
+    private CandleData generateCandleData(List<CandleEntry> candleEntries) {
+        int increasingColor = ContextCompat.getColor(this, R.color.increasing_color);
+        int decreasingColor = ContextCompat.getColor(this, R.color.decreasing_color);
+        int highLineColor = ContextCompat.getColor(this, R.color.high_line_color);
 
         CandleDataSet set = new CandleDataSet(candleEntries, "");
         set.setAxisDependency(YAxis.AxisDependency.RIGHT);
         set.setShadowWidth(0.7f);
-        set.setDecreasingColor(Color.RED);
-        set.setDecreasingPaintStyle(Paint.Style.FILL);
-        set.setIncreasingColor(Color.GREEN);
-        set.setIncreasingPaintStyle(Paint.Style.STROKE);
-        set.setNeutralColor(Color.RED);
+        set.setDecreasingColor(decreasingColor);
+        set.setDecreasingPaintStyle(Paint.Style.FILL_AND_STROKE);
+        set.setIncreasingColor(increasingColor);
+        set.setIncreasingPaintStyle(Paint.Style.FILL_AND_STROKE);
         set.setShadowColorSameAsCandle(true);
         set.setHighlightLineWidth(0.5f);  //选中蜡烛时的高亮线的宽度
-        set.setHighLightColor(Color.WHITE);  //线的颜色
+        set.setHighLightColor(highLineColor);  //线的颜色
+        set.setValueTextColor(ContextCompat.getColor(this, R.color.coordinate_text_color));
 
         CandleData candleData = new CandleData();
         candleData.addDataSet(set);
@@ -254,15 +324,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private BarData generateBarData() {
+        int increasingColor = ContextCompat.getColor(this, R.color.increasing_color);
+        int decreasingColor = ContextCompat.getColor(this, R.color.decreasing_color);
+
         List<BarEntry> barEntries = Model.getBarEntries();
         BarDataSet barDataSet = new BarDataSet(barEntries, "成交量");
         barDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
-        barDataSet.setHighLightColor(Color.WHITE);   //设置选中高亮的条形颜色
         barDataSet.setHighLightAlpha(255);
         barDataSet.setDrawValues(false);
         barDataSet.setHighlightEnabled(true);
-        //barDataSet.setColor(Color.RED);
-        barDataSet.setColors(Color.GREEN, Color.RED);
+        barDataSet.setHighLightColor(ContextCompat.getColor(this, R.color.high_line_color));
+        //修改了源码，这里传入的第一个颜色表示上涨时的颜色，第二个颜色表示下跌的颜色
+        barDataSet.setColors(increasingColor, decreasingColor);
 
         BarData barData = new BarData();
         barData.addDataSet(barDataSet);
@@ -324,6 +397,9 @@ public class MainActivity extends AppCompatActivity {
         mVolumeChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override public void onValueSelected(Entry e, Highlight h) {
                 //同步图表的高亮线
+                Highlight highlight =
+                    new Highlight(h.getX(), h.getY(), h.getXPx(), h.getYPx(), h.getDataSetIndex(),
+                        mKLineChart.getAxisRight().getAxisDependency());
                 mKLineChart.highlightValues(new Highlight[] { h });
             }
 

@@ -2,11 +2,13 @@ package com.example.kchart.mychart;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import com.example.kchart.R;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.CandleData;
 import com.github.mikephil.charting.data.CandleEntry;
 import com.github.mikephil.charting.data.DataSet;
@@ -32,11 +34,12 @@ public class MyCombinedChart extends CombinedChart {
     //左侧Y轴marker
     private YMarkerView mLeftMarkerView;
     private YMarkerView mRightMarkerView;
+    private YLastMarkerView mLastMarkerView;
     private XMarkerView mBottomMarkerView;
     //交叉点的marker
     private CrossMarkerView mCrossMarkerView;
 
-    private Paint paintWhite;
+    private Paint mPaint;
 
     public MyCombinedChart(Context context) {
         this(context, null);
@@ -59,20 +62,27 @@ public class MyCombinedChart extends CombinedChart {
         this.mBottomMarkerView = bottomMarkerView;
     }
 
+    public void setLastMarkerView(YLastMarkerView lastMarkerView) {
+        this.mLastMarkerView = lastMarkerView;
+    }
+
     public void setCrossMarkerView(CrossMarkerView crossMarkerView) {
         this.mCrossMarkerView = crossMarkerView;
     }
 
     private void initPaint() {
-        paintWhite = new Paint();
-        paintWhite.setColor(Color.WHITE);
-        paintWhite.setTextSize(Utils.convertDpToPixel(10));
+        mPaint = new Paint();
+        mPaint.setColor(ContextCompat.getColor(getContext(), R.color.coordinate_text_color));
+        mPaint.setTextSize(Utils.convertDpToPixel(10));
     }
 
     /**
      * 绘制markers:拷贝Chart类中的源码，然后修改
      */
     @Override protected void drawMarkers(Canvas canvas) {
+        //绘制最右侧entry对应的值
+        drawLastEntryMarker(canvas);
+
         // if there is no marker view or drawing marker is disabled
         if (!isDrawMarkersEnabled() || !valuesToHighlight()) return;
 
@@ -129,7 +139,7 @@ public class MyCombinedChart extends CombinedChart {
         showBarHighLine(canvas);
     }
 
-    private void showBarHighLine(Canvas canvas){
+    private void showBarHighLine(Canvas canvas) {
         BarData barData = this.getBarData();
         if (barData != null) {
             for (IBarDataSet set : barData.getDataSets()) {
@@ -155,7 +165,7 @@ public class MyCombinedChart extends CombinedChart {
         }
     }
 
-    private void drawBarHighLine(Canvas c,IBarDataSet dataSet){
+    private void drawBarHighLine(Canvas c, IBarDataSet dataSet) {
         //getHighlighted()
     }
 
@@ -163,10 +173,6 @@ public class MyCombinedChart extends CombinedChart {
      * 绘制最大最小值蜡烛图标记
      */
     private void drawMaxMinCandleMarker(Canvas c, ICandleDataSet dataSet) {
-        Transformer trans = this.getTransformer(dataSet.getAxisDependency());
-
-        float phaseY = mAnimator.getPhaseY();
-        float barSpace = dataSet.getBarSpace();
         mXBounds.set(this, dataSet);
         float maxFloat = Float.MIN_VALUE;
         float minFloat = Float.MAX_VALUE;
@@ -196,56 +202,56 @@ public class MyCombinedChart extends CombinedChart {
         float[] mBodyBuffers = new float[4];
 
         if (maxEntry != null) {
-            float[] maxPixels = getCandleEntryPixel(maxEntry, trans, phaseY, barSpace);
+            float[] maxPixels = getCandleEntryPixel(maxEntry, dataSet);
             float left = maxPixels[0];
             float top = maxPixels[3];
             float right = maxPixels[2];
 
             float x = left + (right - left) / 2;
-            float rightX = getRightX(rightEntry, trans, phaseY, barSpace);
+            float rightX = getRightX(rightEntry, dataSet);
 
-            int textWidth = Utils.calcTextWidth(paintWhite, "" + maxFloat);
-            int textHeight = Utils.calcTextHeight(paintWhite, "" + maxFloat);
+            int textWidth = Utils.calcTextWidth(mPaint, "" + maxFloat);
+            int textHeight = Utils.calcTextHeight(mPaint, "" + maxFloat);
             //如果右侧有足够的空间，则显示在右侧
             if ((x + triangleWidth + textWidth) < rightX) {
                 //绘制一条线和文本
-                c.drawLine(x, top, x + triangleWidth, top, paintWhite);
+                c.drawLine(x, top, x + triangleWidth, top, mPaint);
                 c.drawText(String.valueOf(maxFloat), x + triangleWidth, top + textHeight / 2,
-                    paintWhite);
+                    mPaint);
             }
             //右侧空间不够，显示在左侧
             else {
                 //绘制一条线和文本
-                c.drawLine(x, top, x - triangleWidth, top, paintWhite);
+                c.drawLine(x, top, x - triangleWidth, top, mPaint);
                 c.drawText(String.valueOf(maxFloat), x - triangleWidth - textWidth,
-                    top + textHeight / 2, paintWhite);
+                    top + textHeight / 2, mPaint);
             }
         }
         if (minEntry != null) {
-            float[] minPixels = getCandleEntryPixel(minEntry, trans, phaseY, barSpace);
+            float[] minPixels = getCandleEntryPixel(minEntry, dataSet);
             float left = minPixels[0];
             float right = minPixels[2];
             float bottom = minPixels[1];
 
             float x = left + (right - left) / 2;
-            float rightX = getRightX(rightEntry, trans, phaseY, barSpace);
+            float rightX = getRightX(rightEntry, dataSet);
 
-            int textWidth = Utils.calcTextWidth(paintWhite, "" + minFloat);
-            int textHeight = Utils.calcTextHeight(paintWhite, "" + minFloat);
+            int textWidth = Utils.calcTextWidth(mPaint, "" + minFloat);
+            int textHeight = Utils.calcTextHeight(mPaint, "" + minFloat);
 
             //如果右侧有足够的空间，则显示在右侧
             if ((x + triangleWidth + textWidth) < rightX) {
                 //绘制一条线和文本
-                c.drawLine(x, bottom, x + triangleWidth, bottom, paintWhite);
+                c.drawLine(x, bottom, x + triangleWidth, bottom, mPaint);
                 c.drawText(String.valueOf(minFloat), x + triangleWidth, bottom + textHeight / 2,
-                    paintWhite);
+                    mPaint);
             }
             //右侧空间不够，显示在左侧
             else {
                 //绘制一条线和文本
-                c.drawLine(x, bottom, x - triangleWidth, bottom, paintWhite);
+                c.drawLine(x, bottom, x - triangleWidth, bottom, mPaint);
                 c.drawText(String.valueOf(minFloat), x - triangleWidth - textWidth,
-                    bottom + textHeight / 2, paintWhite);
+                    bottom + textHeight / 2, mPaint);
             }
         }
     }
@@ -253,8 +259,12 @@ public class MyCombinedChart extends CombinedChart {
     /**
      * 将CandleEntry所在的坐标转为Pixel
      */
-    private float[] getCandleEntryPixel(CandleEntry rightEntry, Transformer trans, float phaseY,
-        float barSpace) {
+    private float[] getCandleEntryPixel(CandleEntry rightEntry, ICandleDataSet dataSet) {
+        Transformer trans = this.getTransformer(dataSet.getAxisDependency());
+
+        float phaseY = mAnimator.getPhaseY();
+        float barSpace = dataSet.getBarSpace();
+
         final float xPos = rightEntry.getX();
         final float open = rightEntry.getOpen();
         final float close = rightEntry.getClose();
@@ -276,15 +286,80 @@ public class MyCombinedChart extends CombinedChart {
     }
 
     /**
+     * 将BarEntry所在的坐标转为Pixel
+     */
+    private float[] getBarEntryPixel(BarEntry rightEntry, IBarDataSet dataSet) {
+        Transformer trans = this.getTransformer(dataSet.getAxisDependency());
+
+        float phaseY = mAnimator.getPhaseY();
+
+        final float xPos = rightEntry.getX();
+        final float y = rightEntry.getY();
+
+        float[] mBodyBuffers = new float[4];
+        mBodyBuffers[1] = 0;
+        mBodyBuffers[3] = y * phaseY;
+        trans.pointValuesToPixel(mBodyBuffers);
+
+        //float left = mBodyBuffers[0];
+        //float top = mBodyBuffers[3];
+        //float right = mBodyBuffers[2];
+        //float bottom = mBodyBuffers[1];
+        return mBodyBuffers;
+    }
+
+    /**
      * 将坐标值转为pixel
      */
-    private float getRightX(CandleEntry rightEntry, Transformer trans, float phaseY,
-        float barSpace) {
-        float[] mBodyBuffers = getCandleEntryPixel(rightEntry, trans, phaseY, barSpace);
+    private float getRightX(CandleEntry rightEntry, ICandleDataSet dataSet) {
+        float[] mBodyBuffers = getCandleEntryPixel(rightEntry, dataSet);
         float left = mBodyBuffers[0];
         float right = mBodyBuffers[2];
 
         return left + (right - left) / 2;
+    }
+
+    /**
+     * 绘制最右侧entry对应的值
+     */
+    private void drawLastEntryMarker(Canvas canvas) {
+        if (mLastMarkerView != null) {
+            //蜡烛图
+            CandleData candleData = this.getCandleData();
+            if (candleData != null) {
+                for (ICandleDataSet candleSet : candleData.getDataSets()) {
+                    if (candleSet.isVisible()) {
+                        XBounds tempBounds = new XBounds();
+                        tempBounds.set(this, candleSet);
+                        //坐标系上最右边的entry
+                        CandleEntry rightEntry = candleSet.getEntryForIndex(tempBounds.max);
+                        float[] maxPixels = getCandleEntryPixel(rightEntry, candleSet);
+                        float posY = maxPixels[3];
+                        mLastMarkerView.refreshContent(rightEntry, null);
+                        mLastMarkerView.draw(canvas, mViewPortHandler.contentRight(),
+                            posY - mLastMarkerView.getHeight() / 2);
+                    }
+                }
+            }
+
+            //BarChart
+            BarData barData = this.getBarData();
+            if (barData != null) {
+                for (IBarDataSet barDataSet : barData.getDataSets()) {
+                    if (barDataSet.isVisible()) {
+                        XBounds tempBounds = new XBounds();
+                        tempBounds.set(this, barDataSet);
+                        //坐标系上最右边的entry
+                        BarEntry rightEntry = barDataSet.getEntryForIndex(tempBounds.max);
+                        float[] maxPixels = getBarEntryPixel(rightEntry, barDataSet);
+                        float posY = maxPixels[3];
+                        mLastMarkerView.refreshContent(rightEntry, null);
+                        mLastMarkerView.draw(canvas, mViewPortHandler.contentRight(),
+                            posY - mLastMarkerView.getHeight() / 2);
+                    }
+                }
+            }
+        }
     }
 
     protected XBounds mXBounds = new XBounds();

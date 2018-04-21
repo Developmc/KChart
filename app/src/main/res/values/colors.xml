@@ -4,8 +4,16 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="dark">#2c2c2c</color>
-    <color name="write">#FFFFFF</color>
-    <color name="marker_bg">#F4F6F7</color>
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="chart_bg_color">#10202f</color>
+    <color name="marker_bg_color">#bcc6d9</color>
+    <color name="marker_last_bg_color">#50000000</color>
+    <color name="decreasing_color">#00bf89</color>
+    <color name="increasing_color">#ef6946</color>
+    <color name="coordinate_bg_color">#10B3E5FC</color>
+    <color name="coordinate_text_color">#3b556b</color>
+    <color name="high_line_color">#80FFFFFF</color>
 
 </resources>
