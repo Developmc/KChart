@@ -15,5 +15,7 @@
     <color name="coordinate_bg_color">#10B3E5FC</color>
     <color name="coordinate_text_color">#3b556b</color>
     <color name="high_line_color">#80FFFFFF</color>
+    <color name="ma7_color">#EEA2AD</color>
+    <color name="ma30_color">#AEEEEE</color>
 
 </resources>

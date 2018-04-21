@@ -2,8 +2,11 @@ package com.example.kchart.mychart;
 
 import android.content.Context;
 import android.widget.TextView;
+
 import com.example.kchart.R;
 import com.github.mikephil.charting.components.MarkerView;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.CandleEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.highlight.Highlight;
 
@@ -27,9 +30,21 @@ public class YLastMarkerView extends MarkerView {
 
     // callbacks everytime the MarkerView is redrawn, can be used to update the
     // content (user-interface) 每次 MarkerView 重绘此方法都会被调用，并为您提供更新它显示的内容的机会
-    @Override public void refreshContent(Entry e, Highlight highlight) {
-        //这里就设置你想显示到makerView上的数据，Entry可以得到X、Y轴坐标，也可以e.getData()获取其他你设置的数据
-        tvContent.setText(String.valueOf(e.getY()));
+    @Override
+    public void refreshContent(Entry e, Highlight highlight) {
+        float content = 0.f;
+        //这里有可能是蜡烛图，也有可能是柱状图
+        if (e instanceof CandleEntry) {
+            CandleEntry candleEntry = (CandleEntry) e;
+            //这里取蜡烛图的最高点
+            content = candleEntry.getHigh();
+        } else if (e instanceof BarEntry) {
+            BarEntry barEntry = (BarEntry) e;
+            //这里取柱状图的Y坐标
+            content = barEntry.getY();
+        }
+        tvContent.setText(String.valueOf(content));
         super.refreshContent(e, highlight);
     }
+
 }

@@ -10,6 +10,7 @@ import java.util.List;
  *     version: 1.0
  * </pre>
  */
+@Deprecated
 public class StockListBean {
     /**
      * error : 0
