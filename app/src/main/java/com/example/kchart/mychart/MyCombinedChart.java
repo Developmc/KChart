@@ -144,23 +144,9 @@ public class MyCombinedChart extends CombinedChart {
         super.onDraw(canvas);
         //绘制蜡烛图的最大值和最小值
         showCandleMaxMinMarker(canvas);
-        //显示BarChart上的高亮线
-        showBarHighLine(canvas);
         //监听绘制X轴
         if (mHighestXDrawListener != null) {
             mHighestXDrawListener.onHighestXDraw(mXBounds.max);
-        }
-    }
-
-
-    private void showBarHighLine(Canvas canvas) {
-        BarData barData = this.getBarData();
-        if (barData != null) {
-            for (IBarDataSet set : barData.getDataSets()) {
-                if (set.isVisible()) {
-                    drawBarHighLine(canvas, set);
-                }
-            }
         }
     }
 
@@ -177,10 +163,6 @@ public class MyCombinedChart extends CombinedChart {
                 }
             }
         }
-    }
-
-    private void drawBarHighLine(Canvas c, IBarDataSet dataSet) {
-        //getHighlighted()
     }
 
     /**

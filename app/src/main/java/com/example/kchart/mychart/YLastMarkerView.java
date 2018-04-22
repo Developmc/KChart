@@ -25,7 +25,7 @@ public class YLastMarkerView extends MarkerView {
 
     public YLastMarkerView(Context context) {
         super(context, R.layout.layout_last_marker);
-        tvContent = findViewById(R.id.tv_content);
+        tvContent = findViewById(R.id.tv_k_ma);
     }
 
     // callbacks everytime the MarkerView is redrawn, can be used to update the

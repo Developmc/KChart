@@ -7,8 +7,6 @@ import android.widget.TextView;
 import com.example.kchart.R;
 import com.example.kchart.util.TimeUtil;
 import com.github.mikephil.charting.components.MarkerView;
-import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.data.CandleEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.highlight.Highlight;
 
@@ -30,7 +28,7 @@ public class XMarkerView extends MarkerView {
 
     public XMarkerView(Context context, @NonNull List<Long> dates) {
         super(context, R.layout.layout_coordinate_marker);
-        tvContent = findViewById(R.id.tv_content);
+        tvContent = findViewById(R.id.tv_k_ma);
         this.mDates = dates;
     }
 

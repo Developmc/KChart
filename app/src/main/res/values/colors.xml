@@ -17,5 +17,6 @@
     <color name="high_line_color">#80FFFFFF</color>
     <color name="ma7_color">#EEA2AD</color>
     <color name="ma30_color">#AEEEEE</color>
+    <color name="chart_tab_color">#7D9EC0</color>
 
 </resources>

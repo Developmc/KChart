@@ -6,6 +6,6 @@ package com.example.kchart.test;
  * Desc:
  */
 
-public enum KType {
-    HOUR, DAY
+public enum KLineType {
+    MINUTE, HOUR, DAY
 }

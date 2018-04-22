@@ -1,11 +1,10 @@
 package com.example.kchart;
 
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
 import android.widget.TextView;
 
 import com.example.kchart.mychart.CoupleChartGestureListener;
@@ -16,7 +15,7 @@ import com.example.kchart.mychart.XMarkerView;
 import com.example.kchart.mychart.YLastMarkerView;
 import com.example.kchart.mychart.YMarkerView;
 import com.example.kchart.test.BtcData;
-import com.example.kchart.test.KType;
+import com.example.kchart.test.KLineType;
 import com.example.kchart.test.Model;
 import com.example.kchart.util.TimeUtil;
 import com.github.mikephil.charting.charts.Chart;
@@ -47,15 +46,20 @@ public class MainActivity extends AppCompatActivity {
 
     private MyCombinedChart mKLineChart;
     private MyCombinedChart mVolumeChart;
-    private TextView tvContent;
 
     private List<Long> xVals;
     private List<BtcData> btcDataList;
 
+    //折线
+    private List<Entry> ma7Entries;
+    private List<Entry> ma30Entries;
+    private List<Entry> ma7SecondEntries;
+    private List<Entry> ma30VolumeEntries;
+
     private CombinedData mKLineData;
     private CombinedData mVolumeData;
 
-    private KType mType = KType.HOUR;
+    private KLineType mType = KLineType.MINUTE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,21 +69,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        tvContent = findViewById(R.id.tv_content);
-        TextView tvHour = findViewById(R.id.tv_hour);
-        tvHour.setOnClickListener(new View.OnClickListener() {
+        TabLayout tlType = findViewById(R.id.tl_type);
+        tlType.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
-            public void onClick(View v) {
-                mType = KType.HOUR;
+            public void onTabSelected(TabLayout.Tab tab) {
+                switch (tab.getPosition()) {
+                    case 0:
+                        mType = KLineType.MINUTE;
+                        break;
+                    case 1:
+                        mType = KLineType.HOUR;
+                        break;
+                    case 2:
+                        mType = KLineType.DAY;
+                        break;
+                }
                 loadChart();
             }
-        });
-        TextView tvDay = findViewById(R.id.tv_day);
-        tvDay.setOnClickListener(new View.OnClickListener() {
+
             @Override
-            public void onClick(View v) {
-                mType = KType.DAY;
-                loadChart();
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
             }
         });
 
@@ -157,9 +172,9 @@ public class MainActivity extends AppCompatActivity {
         CandleData candleData = generateCandleData(candleEntries);
         mKLineData.setData(candleData);
         /*ma7*/
-        List<Entry> ma7Entries = Model.getCloseMaEntries(btcDataList, 7);
+        ma7Entries = Model.getCloseMaEntries(btcDataList, 7);
         /*ma30*/
-        List<Entry> ma30Entries = Model.getCloseMaEntries(btcDataList, 30);
+        ma30Entries = Model.getCloseMaEntries(btcDataList, 30);
 
         LineData lineData = new LineData(generateLineDataSet(ma7Entries, ma7Color, "ma7"),
                 generateLineDataSet(ma30Entries, ma30Color, "ma30"));
@@ -170,11 +185,11 @@ public class MainActivity extends AppCompatActivity {
         mVolumeData.setData(generateBarData());
         /*成交量平均线曲线*/
         /*ma7*/
-        List<Entry> ma7VolumeEntries = Model.getMaVolumeEntries(btcDataList, 7);
+        ma7SecondEntries = Model.getMaVolumeEntries(btcDataList, 7);
         /*ma30*/
-        List<Entry> ma30VolumeEntries = Model.getMaVolumeEntries(btcDataList, 30);
+        ma30VolumeEntries = Model.getMaVolumeEntries(btcDataList, 30);
         LineData volumeLineData =
-                new LineData(generateLineDataSet(ma7VolumeEntries, ma7Color, "ma7"),
+                new LineData(generateLineDataSet(ma7SecondEntries, ma7Color, "ma7"),
                         generateLineDataSet(ma30VolumeEntries, ma30Color, "ma30"));
         mVolumeData.setData(volumeLineData);
     }
@@ -452,8 +467,31 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateText(float x) {
         int index = (int) x;
-        CandleEntry candleEntry = mKLineChart.getCandleData().getDataSets()
-                .get(0).getEntryForIndex(index);
-        tvContent.setText(String.valueOf(candleEntry.getHigh()));
+//        CandleEntry candleEntry = mKLineChart.getCandleData().getDataSets()
+//                .get(0).getEntryForIndex(index);
+//        tvKMa.setText(String.valueOf(candleEntry.getHigh()));
+
+        BarEntry barEntry = mVolumeChart.getBarData().getDataSetByIndex(0).getEntryForIndex(index);
+
+        TextView firstMa7 = findViewById(R.id.tv_first_ma7);
+        TextView firstMa30 = findViewById(R.id.tv_first_ma30);
+        TextView secondMa7 = findViewById(R.id.tv_second_ma7);
+        TextView secondMa30 = findViewById(R.id.tv_second_ma30);
+        TextView secondVolume = findViewById(R.id.tv_second_volume);
+
+        firstMa7.setText("MA7: " + getLineEntry(x, ma7Entries).getY());
+        firstMa30.setText("MA30: " + getLineEntry(x, ma30Entries).getY());
+        secondMa7.setText("MA7: " + getLineEntry(x, ma7SecondEntries).getY());
+        secondMa30.setText("MA7: " + getLineEntry(x, ma30VolumeEntries).getY());
+        secondVolume.setText("Volume: " + barEntry.getY());
+    }
+
+    private Entry getLineEntry(float x, List<Entry> entries) {
+        for (Entry entry : entries) {
+            if (entry.getX() == x) {
+                return entry;
+            }
+        }
+        return new Entry();
     }
 }
