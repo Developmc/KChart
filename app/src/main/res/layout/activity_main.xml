@@ -1,125 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.example.kchart.MainActivity">
-
-    <android.support.design.widget.TabLayout
-        android:id="@+id/tl_type"
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:background="@color/chart_bg_color"
-        app:tabGravity="fill"
-        app:tabIndicatorColor="@color/chart_tab_color"
-        app:tabMode="scrollable"
-        app:tabSelectedTextColor="@color/chart_tab_color"
-        app:tabTextColor="@color/coordinate_text_color">
-
-        <android.support.design.widget.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Minute" />
-
-        <android.support.design.widget.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hour" />
-
-        <android.support.design.widget.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Day" />
-
-    </android.support.design.widget.TabLayout>
-
+    >
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/chart_bg_color"
-        android:orientation="horizontal"
-        android:paddingEnd="8dp"
-        android:paddingStart="8dp">
+        android:orientation="vertical"
+        tools:context="com.example.kchart.MainActivity"
+        >
 
-        <TextView
-            android:id="@+id/tv_first_ma7"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:textColor="@color/ma7_color"
-            android:textSize="8sp"
-            tools:ignore="SmallSp"
-            tools:text="@string/app_name" />
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tl_type"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:background="@color/chart_bg_color"
+            app:tabGravity="fill"
+            app:tabIndicatorColor="@color/chart_tab_color"
+            app:tabMode="scrollable"
+            app:tabSelectedTextColor="@color/chart_tab_color"
+            app:tabTextColor="@color/coordinate_text_color"
+            >
 
-        <TextView
-            android:id="@+id/tv_first_ma30"
-            android:layout_width="wrap_content"
+            <android.support.design.widget.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Minute"
+                />
+
+            <android.support.design.widget.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hour"
+                />
+
+            <android.support.design.widget.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Day"
+                />
+
+        </android.support.design.widget.TabLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:textColor="@color/ma30_color"
-            android:textSize="8sp"
-            tools:ignore="SmallSp"
-            tools:text="@string/app_name" />
+            android:background="@color/chart_bg_color"
+            android:orientation="horizontal"
+            android:paddingEnd="8dp"
+            android:paddingStart="8dp"
+            >
+
+            <TextView
+                android:id="@+id/tv_first_ma7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/ma7_color"
+                android:textSize="8sp"
+                tools:ignore="SmallSp"
+                tools:text="@string/app_name"
+                />
+
+            <TextView
+                android:id="@+id/tv_first_ma30"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/ma30_color"
+                android:textSize="8sp"
+                tools:ignore="SmallSp"
+                tools:text="@string/app_name"
+                />
+        </LinearLayout>
+
+        <com.example.kchart.mychart.MyCombinedChart
+            android:id="@+id/k_line_chart"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:visibility="visible"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/chart_bg_color"
+            android:orientation="horizontal"
+            android:paddingEnd="8dp"
+            android:paddingStart="8dp"
+            >
+
+            <TextView
+                android:id="@+id/tv_second_volume"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/white"
+                android:textSize="8sp"
+                tools:ignore="SmallSp"
+                tools:text="@string/app_name"
+                />
+
+            <TextView
+                android:id="@+id/tv_second_ma7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/ma7_color"
+                android:textSize="8sp"
+                tools:ignore="SmallSp"
+                tools:text="@string/app_name"
+                />
+
+            <TextView
+                android:id="@+id/tv_second_ma30"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/ma30_color"
+                android:textSize="8sp"
+                tools:ignore="SmallSp"
+                tools:text="@string/app_name"
+                />
+        </LinearLayout>
+
+        <com.example.kchart.mychart.MyCombinedChart
+            android:id="@+id/volume_chart"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:visibility="visible"
+            />
+
+        <com.example.kchart.mychart.MyLineChart
+            android:id="@+id/depth_chart"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            />
     </LinearLayout>
 
-    <com.example.kchart.mychart.MyCombinedChart
-        android:id="@+id/k_line_chart"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="3"
-        android:visibility="visible" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/chart_bg_color"
-        android:orientation="horizontal"
-        android:paddingEnd="8dp"
-        android:paddingStart="8dp">
-
-        <TextView
-            android:id="@+id/tv_second_volume"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:textColor="@color/white"
-            android:textSize="8sp"
-            tools:ignore="SmallSp"
-            tools:text="@string/app_name" />
-
-        <TextView
-            android:id="@+id/tv_second_ma7"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:textColor="@color/ma7_color"
-            android:textSize="8sp"
-            tools:ignore="SmallSp"
-            tools:text="@string/app_name" />
-
-        <TextView
-            android:id="@+id/tv_second_ma30"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:textColor="@color/ma30_color"
-            android:textSize="8sp"
-            tools:ignore="SmallSp"
-            tools:text="@string/app_name" />
-    </LinearLayout>
-
-    <com.example.kchart.mychart.MyCombinedChart
-        android:id="@+id/volume_chart"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:visibility="visible" />
-
-</LinearLayout>
+</ScrollView>

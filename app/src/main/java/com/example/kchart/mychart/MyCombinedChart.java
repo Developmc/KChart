@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
-
 import com.example.kchart.R;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.data.BarData;
@@ -20,7 +19,6 @@ import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.interfaces.datasets.IBarLineScatterCandleBubbleDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ICandleDataSet;
 import com.github.mikephil.charting.interfaces.datasets.IDataSet;
-import com.github.mikephil.charting.listener.OnDrawListener;
 import com.github.mikephil.charting.utils.Transformer;
 import com.github.mikephil.charting.utils.Utils;
 
@@ -65,6 +63,10 @@ public class MyCombinedChart extends CombinedChart {
         this.mBottomMarkerView = bottomMarkerView;
     }
 
+    public XMarkerView getBottomMarkerView() {
+        return this.mBottomMarkerView;
+    }
+
     public void setLastMarkerView(YLastMarkerView lastMarkerView) {
         this.mLastMarkerView = lastMarkerView;
     }
@@ -86,8 +88,7 @@ public class MyCombinedChart extends CombinedChart {
     /**
      * 绘制markers:拷贝Chart类中的源码，然后修改
      */
-    @Override
-    protected void drawMarkers(Canvas canvas) {
+    @Override protected void drawMarkers(Canvas canvas) {
         //绘制最右侧entry对应的值
         drawLastEntryMarker(canvas);
 
@@ -116,20 +117,20 @@ public class MyCombinedChart extends CombinedChart {
                 mLeftMarkerView.refreshContent(e, highlight);
                 // draw the marker:pos[0]对应的坐标是X,pos[1]对应的坐标是Y
                 mLeftMarkerView.draw(canvas,
-                        mViewPortHandler.contentLeft() - mLeftMarkerView.getWidth(),
-                        pos[1] - mLeftMarkerView.getHeight() / 2);
+                    mViewPortHandler.contentLeft() - mLeftMarkerView.getWidth(),
+                    pos[1] - mLeftMarkerView.getHeight() / 2);
             }
 
             if (mRightMarkerView != null) {
                 mRightMarkerView.refreshContent(e, highlight);
                 mRightMarkerView.draw(canvas, mViewPortHandler.contentRight(),
-                        pos[1] - mRightMarkerView.getHeight() / 2);
+                    pos[1] - mRightMarkerView.getHeight() / 2);
             }
 
             if (mBottomMarkerView != null) {
                 mBottomMarkerView.refreshContent(e, highlight);
                 mBottomMarkerView.draw(canvas, pos[0] - mBottomMarkerView.getWidth() / 2,
-                        mViewPortHandler.contentBottom());
+                    mViewPortHandler.contentBottom());
             }
 
             if (mCrossMarkerView != null) {
@@ -139,8 +140,7 @@ public class MyCombinedChart extends CombinedChart {
         }
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
+    @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         //绘制蜡烛图的最大值和最小值
         showCandleMaxMinMarker(canvas);
@@ -213,14 +213,14 @@ public class MyCombinedChart extends CombinedChart {
                 //绘制一条线和文本
                 c.drawLine(x, top, x + triangleWidth, top, mPaint);
                 c.drawText(String.valueOf(maxFloat), x + triangleWidth, top + textHeight / 2,
-                        mPaint);
+                    mPaint);
             }
             //右侧空间不够，显示在左侧
             else {
                 //绘制一条线和文本
                 c.drawLine(x, top, x - triangleWidth, top, mPaint);
                 c.drawText(String.valueOf(maxFloat), x - triangleWidth - textWidth,
-                        top + textHeight / 2, mPaint);
+                    top + textHeight / 2, mPaint);
             }
         }
         if (minEntry != null) {
@@ -240,14 +240,14 @@ public class MyCombinedChart extends CombinedChart {
                 //绘制一条线和文本
                 c.drawLine(x, bottom, x + triangleWidth, bottom, mPaint);
                 c.drawText(String.valueOf(minFloat), x + triangleWidth, bottom + textHeight / 2,
-                        mPaint);
+                    mPaint);
             }
             //右侧空间不够，显示在左侧
             else {
                 //绘制一条线和文本
                 c.drawLine(x, bottom, x - triangleWidth, bottom, mPaint);
                 c.drawText(String.valueOf(minFloat), x - triangleWidth - textWidth,
-                        bottom + textHeight / 2, mPaint);
+                    bottom + textHeight / 2, mPaint);
             }
         }
     }
@@ -333,7 +333,7 @@ public class MyCombinedChart extends CombinedChart {
                         float posY = maxPixels[3];
                         mLastMarkerView.refreshContent(rightEntry, null);
                         mLastMarkerView.draw(canvas, mViewPortHandler.contentRight(),
-                                posY - mLastMarkerView.getHeight() / 2);
+                            posY - mLastMarkerView.getHeight() / 2);
                     }
                 }
             }
@@ -351,7 +351,7 @@ public class MyCombinedChart extends CombinedChart {
                         float posY = maxPixels[3];
                         mLastMarkerView.refreshContent(rightEntry, null);
                         mLastMarkerView.draw(canvas, mViewPortHandler.contentRight(),
-                                posY - mLastMarkerView.getHeight() / 2);
+                            posY - mLastMarkerView.getHeight() / 2);
                     }
                 }
             }
@@ -385,7 +385,7 @@ public class MyCombinedChart extends CombinedChart {
          * Calculates the minimum and maximum x values as well as the range between them.
          */
         public void set(BarLineScatterCandleBubbleDataProvider chart,
-                        IBarLineScatterCandleBubbleDataSet dataSet) {
+            IBarLineScatterCandleBubbleDataSet dataSet) {
             float phaseX = Math.max(0.f, Math.min(1.f, mAnimator.getPhaseX()));
 
             float low = chart.getLowestVisibleX();

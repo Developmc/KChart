@@ -6,11 +6,11 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
-
 import com.example.kchart.mychart.CoupleChartGestureListener;
 import com.example.kchart.mychart.CrossMarkerView;
 import com.example.kchart.mychart.HighestXDrawListener;
 import com.example.kchart.mychart.MyCombinedChart;
+import com.example.kchart.mychart.MyLineChart;
 import com.example.kchart.mychart.XMarkerView;
 import com.example.kchart.mychart.YLastMarkerView;
 import com.example.kchart.mychart.YMarkerView;
@@ -38,7 +38,6 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.Utils;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     private MyCombinedChart mKLineChart;
     private MyCombinedChart mVolumeChart;
+    private MyLineChart mDepthChart;
 
     private List<Long> xVals;
     private List<BtcData> btcDataList;
@@ -58,11 +58,11 @@ public class MainActivity extends AppCompatActivity {
 
     private CombinedData mKLineData;
     private CombinedData mVolumeData;
+    private LineData mDepthData;
 
     private KLineType mType = KLineType.MINUTE;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
@@ -71,8 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private void initView() {
         TabLayout tlType = findViewById(R.id.tl_type);
         tlType.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
+            @Override public void onTabSelected(TabLayout.Tab tab) {
                 switch (tab.getPosition()) {
                     case 0:
                         mType = KLineType.MINUTE;
@@ -87,20 +86,18 @@ public class MainActivity extends AppCompatActivity {
                 loadChart();
             }
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
+            @Override public void onTabUnselected(TabLayout.Tab tab) {
 
             }
 
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
+            @Override public void onTabReselected(TabLayout.Tab tab) {
 
             }
         });
 
-        initChartData();
         initKLineChart();
         initVolumeChart();
+        initDepthChart();
         //有测试数据的组合图
         loadChart();
     }
@@ -110,43 +107,50 @@ public class MainActivity extends AppCompatActivity {
     /***** 从github上找到的测试数据 *****/
 
     private void loadChart() {
-        //初始化数据
         initChartData();
 
         mKLineChart.setData(mKLineData);
         mKLineChart.getXAxis().setAxisMinimum(-0.5f);
         mKLineChart.getXAxis().setAxisMaximum(mKLineData.getXMax() + 0.5f);
-        //设置缩放（X坐标最多显示40个单位）,需要在设置数据后调用才有效
-        mKLineChart.setVisibleXRangeMaximum(40);
+        //设置缩放（X坐标最多显示48个单位）,需要在设置数据后调用才有效
+        mKLineChart.setVisibleXRangeMaximum(48);
         mKLineChart.post(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 //控制缩放范围
                 mKLineChart.setVisibleXRangeMinimum(10);
                 mKLineChart.setVisibleXRangeMaximum(1000);
             }
         });
+        //设置x轴的marker显示
+        mKLineChart.getBottomMarkerView().setDates(xVals);
         //移动当前的X到最后
         mKLineChart.moveViewToX(xVals.size());
         mKLineChart.invalidate();
 
         /****************************/
+        //成交量图
         mVolumeChart.setData(mVolumeData);
         mVolumeChart.getXAxis().setAxisMinimum(-0.5f);
         mVolumeChart.getXAxis().setAxisMaximum(mVolumeData.getXMax() + 0.5f);
-        //设置缩放（X坐标最多显示40个单位）,需要在设置数据后调用才有效
-        mVolumeChart.setVisibleXRangeMaximum(40);
+        //设置缩放（X坐标最多显示48个单位）,需要在设置数据后调用才有效
+        mVolumeChart.setVisibleXRangeMaximum(48);
         mVolumeChart.post(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 //控制缩放范围
                 mVolumeChart.setVisibleXRangeMinimum(10);
                 mVolumeChart.setVisibleXRangeMaximum(1000);
             }
         });
+        //设置x轴的marker显示
+        mVolumeChart.getBottomMarkerView().setDates(xVals);
         //移动当前的X到最后
         mVolumeChart.moveViewToX(xVals.size());
         mVolumeChart.invalidate();
+
+        /****************************/
+        //深度图
+        mDepthChart.setData(mDepthData);
+        mDepthChart.invalidate();
 
         //设置两表对齐
         setOffset();
@@ -177,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
         ma30Entries = Model.getCloseMaEntries(btcDataList, 30);
 
         LineData lineData = new LineData(generateLineDataSet(ma7Entries, ma7Color, "ma7"),
-                generateLineDataSet(ma30Entries, ma30Color, "ma30"));
+            generateLineDataSet(ma30Entries, ma30Color, "ma30"));
         mKLineData.setData(lineData);
 
         //成交量图
@@ -189,9 +193,17 @@ public class MainActivity extends AppCompatActivity {
         /*ma30*/
         ma30VolumeEntries = Model.getMaVolumeEntries(btcDataList, 30);
         LineData volumeLineData =
-                new LineData(generateLineDataSet(ma7SecondEntries, ma7Color, "ma7"),
-                        generateLineDataSet(ma30VolumeEntries, ma30Color, "ma30"));
+            new LineData(generateLineDataSet(ma7SecondEntries, ma7Color, "ma7"),
+                generateLineDataSet(ma30VolumeEntries, ma30Color, "ma30"));
         mVolumeData.setData(volumeLineData);
+
+        //深度图
+        int sellColor = ContextCompat.getColor(this, R.color.increasing_color);
+        int buyColor = ContextCompat.getColor(this, R.color.decreasing_color);
+        List<Entry> buyEntries = Model.getBuyDepths();
+        List<Entry> sellEntries = Model.getSellDepths();
+        mDepthData = new LineData(generateDepthLineDataSet(buyEntries, buyColor, "买"),
+            generateDepthLineDataSet(sellEntries, sellColor, "卖"));
     }
 
     private void initKLineChart() {
@@ -209,12 +221,12 @@ public class MainActivity extends AppCompatActivity {
         mKLineChart.setAutoScaleMinMaxEnabled(true);
         mKLineChart.setDescription(null);//右下角对图表的描述信息
         mKLineChart.setMinOffset(0f);//移除内边距
-        mKLineChart.setExtraBottomOffset(5f); //添加Bottom X坐标的内边距，避免显示不全
+        mKLineChart.setExtraBottomOffset(10f); //添加Bottom X坐标的内边距，避免显示不全
 
         XAxis xAxis = mKLineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setTextSize(8);//设置字体大小
-        xAxis.setLabelCount(10, false);
+        xAxis.setLabelCount(12, false);
         xAxis.setDrawGridLines(true);  //显示X轴网格
         xAxis.setDrawAxisLine(true);  //绘制坐标轴线
         xAxis.setGridColor(coordinateBgColor);//设置网格线的颜色
@@ -224,8 +236,7 @@ public class MainActivity extends AppCompatActivity {
         xAxis.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         //将X坐标转换显示
         xAxis.setValueFormatter(new IAxisValueFormatter() {
-            @Override
-            public String getFormattedValue(float value, AxisBase axis) {
+            @Override public String getFormattedValue(float value, AxisBase axis) {
                 int index = (int) value;
                 return TimeUtil.long2String(xVals.get(index), TimeUtil.CHART_FORMAT);
             }
@@ -256,15 +267,15 @@ public class MainActivity extends AppCompatActivity {
         mKLineChart.getLegend().setEnabled(false);
         mKLineChart.resetTracking();
         //设置绘制顺序，避免遮掩 (要在setData之前设置)
-        mKLineChart.setDrawOrder(new CombinedChart.DrawOrder[]{
-                CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
+        mKLineChart.setDrawOrder(new CombinedChart.DrawOrder[] {
+            CombinedChart.DrawOrder.CANDLE, CombinedChart.DrawOrder.LINE
         });
 
         //设置Left坐标轴上的markerView
         //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
         mKLineChart.setRightMarkerView(new YMarkerView(this));
         mKLineChart.setLastMarkerView(new YLastMarkerView(this));
-        mKLineChart.setBottomMarkerView(new XMarkerView(this, xVals));
+        mKLineChart.setBottomMarkerView(new XMarkerView(this));
         //设置交叉点的markerView
         mKLineChart.setCrossMarkerView(new CrossMarkerView(this));
     }
@@ -297,8 +308,7 @@ public class MainActivity extends AppCompatActivity {
         xAxisBar.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
         xAxisBar.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxisBar.setValueFormatter(new IAxisValueFormatter() {
-            @Override
-            public String getFormattedValue(float value, AxisBase axis) {
+            @Override public String getFormattedValue(float value, AxisBase axis) {
                 int index = (int) value;
                 return TimeUtil.long2String(xVals.get(index), TimeUtil.CHART_FORMAT);
             }
@@ -326,7 +336,62 @@ public class MainActivity extends AppCompatActivity {
         //mCombinedChart.setLeftMarkerView(new CoordinateMarkerView(this));
         mVolumeChart.setRightMarkerView(new YMarkerView(this));
         mVolumeChart.setLastMarkerView(new YLastMarkerView(this));
-        mVolumeChart.setBottomMarkerView(new XMarkerView(this, xVals));
+        mVolumeChart.setBottomMarkerView(new XMarkerView(this));
+    }
+
+    private void initDepthChart() {
+        mDepthChart = findViewById(R.id.depth_chart);
+        int chartBgColor = ContextCompat.getColor(this, R.color.chart_bg_color);
+        int coordinateBgColor = ContextCompat.getColor(this, R.color.coordinate_bg_color);
+        int coordinateTextColor = ContextCompat.getColor(this, R.color.coordinate_text_color);
+
+        // scaling can now only be done on x- and y-axis separately
+        mDepthChart.setPinchZoom(false);
+        mDepthChart.setScaleXEnabled(false);   //不允许X轴缩放
+        mDepthChart.setScaleYEnabled(false);   //不允许Y轴缩放
+
+        mDepthChart.setBackgroundColor(chartBgColor);
+        mDepthChart.setDrawGridBackground(false);
+        mDepthChart.setAutoScaleMinMaxEnabled(false);
+        mDepthChart.setDescription(null);//右下角对图表的描述信息
+        mDepthChart.setMinOffset(8f);//移除内边距
+        mDepthChart.setExtraBottomOffset(5f); //添加Bottom X坐标的内边距，避免显示不全
+
+        XAxis xAxis = mDepthChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(8);//设置字体大小
+        xAxis.setLabelCount(3, true);
+        xAxis.setDrawGridLines(false);  //显示X轴网格
+        xAxis.setDrawAxisLine(true);  //绘制坐标轴线
+        xAxis.setGridColor(coordinateBgColor);//设置网格线的颜色
+        xAxis.setGridLineWidth(0.5f);//设置网格线的宽度
+        xAxis.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        xAxis.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        xAxis.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
+
+        YAxis leftAxis = mDepthChart.getAxisLeft();
+        leftAxis.setEnabled(true);
+        leftAxis.setTextSize(8);//设置字体大小
+        //leftAxis.setLabelCount(5, false);
+        leftAxis.setDrawGridLines(false); ////显示Y轴网格
+        leftAxis.setDrawAxisLine(true);  //绘制坐标轴线
+        leftAxis.setGridColor(coordinateBgColor);//设置网格线的颜色
+        leftAxis.setGridLineWidth(0.5f);//设置网格线的宽度
+        leftAxis.setAxisLineColor(coordinateBgColor);//设置坐标轴的颜色
+        leftAxis.setAxisLineWidth(0.5f);//设置坐标轴的宽度
+        leftAxis.setTextColor(coordinateTextColor);//设置坐标轴的文本颜色
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);  //设置坐标上值显示的位置
+
+        YAxis rightAxis = mDepthChart.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        // 设置图标示
+        mDepthChart.getLegend().setEnabled(true);
+        mDepthChart.getLegend().setTextColor(coordinateTextColor);
+        //设置图标示例居中显示
+        mDepthChart.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        mDepthChart.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        mDepthChart.resetTracking();
     }
 
     private LineDataSet generateLineDataSet(List<Entry> entries, int color, String label) {
@@ -339,7 +404,22 @@ public class MainActivity extends AppCompatActivity {
         set.setDrawValues(false);
         set.setHighlightEnabled(false);
         set.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        return set;
+    }
 
+    private LineDataSet generateDepthLineDataSet(List<Entry> entries, int color, String label) {
+        LineDataSet set = new LineDataSet(entries, label);
+        set.setColor(color);
+        set.setLineWidth(1f); //线条宽度
+        set.setCubicIntensity(0.5f);//圆滑曲线
+        set.setDrawCircles(false);
+        set.setDrawCircleHole(false);
+        set.setDrawValues(false);
+        set.setHighlightEnabled(false);
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setDrawFilled(true);  //绘制填充色
+        set.setFillColor(color);
+        set.setFillAlpha(40);   //设置透明度
         return set;
     }
 
@@ -416,49 +496,44 @@ public class MainActivity extends AppCompatActivity {
     private void setChartListener() {
         //将K线图的滑动事件传递给交易量图
         mKLineChart.setOnChartGestureListener(
-                new CoupleChartGestureListener(mKLineChart, new Chart[]{mVolumeChart}));
+            new CoupleChartGestureListener(mKLineChart, new Chart[] { mVolumeChart }));
         //将交易量图的滑动事件传递给K线图
         mVolumeChart.setOnChartGestureListener(
-                new CoupleChartGestureListener(mVolumeChart, new Chart[]{mKLineChart}));
+            new CoupleChartGestureListener(mVolumeChart, new Chart[] { mKLineChart }));
         //滑动后，手指离开，不会有惯性滚动
         mKLineChart.setDragDecelerationEnabled(false);
         mVolumeChart.setDragDecelerationEnabled(false);
 
         //设置选中的监听器
         mKLineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry e, Highlight h) {
+            @Override public void onValueSelected(Entry e, Highlight h) {
                 //同步图表的高亮线
-                mVolumeChart.highlightValues(new Highlight[]{h});
+                mVolumeChart.highlightValues(new Highlight[] { h });
             }
 
-            @Override
-            public void onNothingSelected() {
+            @Override public void onNothingSelected() {
                 //清空高亮线
                 mKLineChart.highlightValues(null);
                 mVolumeChart.highlightValue(null);
             }
         });
         mVolumeChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry e, Highlight h) {
+            @Override public void onValueSelected(Entry e, Highlight h) {
                 //同步图表的高亮线
                 Highlight highlight =
-                        new Highlight(h.getX(), h.getY(), h.getXPx(), h.getYPx(), h.getDataSetIndex(),
-                                mKLineChart.getAxisRight().getAxisDependency());
-                mKLineChart.highlightValues(new Highlight[]{h});
+                    new Highlight(h.getX(), h.getY(), h.getXPx(), h.getYPx(), h.getDataSetIndex(),
+                        mKLineChart.getAxisRight().getAxisDependency());
+                mKLineChart.highlightValues(new Highlight[] { h });
             }
 
-            @Override
-            public void onNothingSelected() {
+            @Override public void onNothingSelected() {
                 //清空高亮线
                 mKLineChart.highlightValues(null);
                 mVolumeChart.highlightValue(null);
             }
         });
         mKLineChart.setHighestXDrawListener(new HighestXDrawListener() {
-            @Override
-            public void onHighestXDraw(float highestX) {
+            @Override public void onHighestXDraw(float highestX) {
                 //更新显示的数据
                 updateText(highestX);
             }
@@ -467,9 +542,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateText(float x) {
         int index = (int) x;
-//        CandleEntry candleEntry = mKLineChart.getCandleData().getDataSets()
-//                .get(0).getEntryForIndex(index);
-//        tvKMa.setText(String.valueOf(candleEntry.getHigh()));
 
         BarEntry barEntry = mVolumeChart.getBarData().getDataSetByIndex(0).getEntryForIndex(index);
 
